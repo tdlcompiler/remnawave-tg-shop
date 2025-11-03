@@ -53,6 +53,7 @@ class PanelApiService:
             "X-Forwarded-Proto": "https",
             "X-Forwarded-For": self.default_client_ip,
             "X-Real-IP": self.default_client_ip,
+            "X-Api-Key": self.settings.PANEL_CADDY_API_KEY,
         }
         if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"

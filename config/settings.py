@@ -43,6 +43,8 @@ class Settings(BaseSettings):
     YOOKASSA_AUTOPAYMENTS_ENABLED: bool = Field(default=False)
 
     WEBHOOK_BASE_URL: Optional[str] = None
+    
+    ADMIN_CONTACT_URL: Optional[str] = None
 
     CRYPTOPAY_TOKEN: Optional[str] = None
     CRYPTOPAY_NETWORK: str = Field(default="mainnet")
@@ -119,6 +121,7 @@ class Settings(BaseSettings):
 
     PANEL_API_URL: Optional[str] = None
     PANEL_API_KEY: Optional[str] = None
+    PANEL_CADDY_API_KEY: Optional[str] = None
     USER_TRAFFIC_LIMIT_GB: Optional[float] = Field(default=0.0)
     USER_TRAFFIC_STRATEGY: str = Field(default="NO_RESET")
     USER_SQUAD_UUIDS: Optional[str] = Field(

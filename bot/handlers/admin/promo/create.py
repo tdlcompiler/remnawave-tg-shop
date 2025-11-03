@@ -87,7 +87,7 @@ async def process_promo_code_handler(message: types.Message,
         # Step 2: Ask for bonus days
         prompt_text = _(
             "admin_promo_step2_bonus_days",
-            default="🎟 <b>Создание промокода</b>\n\n<b>Шаг 2 из 4:</b> Бонусные дни\n\nКод: <b>{code}</b>\n\nВведите количество бонусных дней (1-365):",
+            default="🎟 <b>Создание промокода</b>\n\n<b>Шаг 2 из 4:</b> Бонусные дни\n\nКод: <b>{code}</b>\n\nВведите количество бонусных дней (1-1825):",
             code=code_str
         )
         
@@ -118,10 +118,10 @@ async def process_promo_bonus_days_handler(message: types.Message,
 
     try:
         bonus_days = int(message.text.strip())
-        if not (1 <= bonus_days <= 365):
+        if not (1 <= bonus_days <= 1825):
             await message.answer(_(
                 "admin_promo_invalid_bonus_days",
-                default="❌ Количество бонусных дней должно быть от 1 до 365"
+                default="❌ Количество бонусных дней должно быть от 1 до 1825"
             ))
             return
         
@@ -252,7 +252,7 @@ async def process_promo_set_validity(callback: types.CallbackQuery,
     data = await state.get_data()
     prompt_text = _(
         "admin_promo_enter_validity_days",
-        default="🎟 <b>Создание промокода</b>\n\n<b>Шаг 4 из 4:</b> Срок действия\n\nКод: <b>{code}</b>\nБонусные дни: <b>{bonus_days}</b>\nМакс. активаций: <b>{max_activations}</b>\n\nВведите количество дней действия промокода (1-365):",
+        default="🎟 <b>Создание промокода</b>\n\n<b>Шаг 4 из 4:</b> Срок действия\n\nКод: <b>{code}</b>\nБонусные дни: <b>{bonus_days}</b>\nМакс. активаций: <b>{max_activations}</b>\n\nВведите количество дней действия промокода (1-1825):",
         code=data.get("promo_code"),
         bonus_days=data.get("bonus_days"),
         max_activations=data.get("max_activations")
@@ -289,10 +289,10 @@ async def process_promo_validity_days_handler(message: types.Message,
 
     try:
         validity_days = int(message.text.strip())
-        if not (1 <= validity_days <= 365):
+        if not (1 <= validity_days <= 1825):
             await message.answer(_(
                 "admin_promo_invalid_validity_days",
-                default="❌ Срок действия должен быть от 1 до 365 дней"
+                default="❌ Срок действия должен быть от 1 до 1825 дней"
             ))
             return
         

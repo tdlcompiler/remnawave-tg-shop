@@ -132,6 +132,9 @@ def get_payment_method_keyboard(months: int, price: float,
     if settings.CRYPTOPAY_ENABLED:
         builder.button(text=_("pay_with_cryptopay_button"),
                        callback_data=f"pay_crypto:{months}:{price}")
+    if settings.ADMIN_CONTACT_URL:
+        builder.button(text=_("pay_with_admin_contact"),
+                       url=settings.ADMIN_CONTACT_URL)
     builder.button(text=_(key="cancel_button"),
                    callback_data="main_action:subscribe")
     builder.adjust(1)
@@ -338,11 +341,11 @@ def get_connect_and_main_keyboard(
     _ = lambda key, **kwargs: i18n_instance.gettext(lang, key, **kwargs)
     builder = InlineKeyboardBuilder()
 
-    if settings.SUBSCRIPTION_MINI_APP_URL:
+    if settings.SUBSCRIPTION_MINI_APP_URL and config_link:
         builder.row(
             InlineKeyboardButton(
                 text=_("connect_button"),
-                web_app=WebAppInfo(url=settings.SUBSCRIPTION_MINI_APP_URL),
+                web_app=WebAppInfo(url=config_link),
             )
         )
     elif config_link:

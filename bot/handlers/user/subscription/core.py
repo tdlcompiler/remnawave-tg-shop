@@ -140,7 +140,7 @@ async def my_subscription_command_handler(
         "my_subscription_details",
         end_date=end_date.strftime("%Y-%m-%d") if end_date else "N/A",
         days_left=max(0, days_left),
-        status=active.get("status_from_panel", get_text("status_active")).capitalize(),
+        status=get_text("status_active") if active.get("status_from_panel", "").lower() == "active" else get_text("status_inactive"),
         config_link=active.get("config_link") or get_text("config_link_not_available"),
         traffic_limit=(f"{active['traffic_limit_bytes'] / 2**30:.2f} GB" if active.get("traffic_limit_bytes") else get_text("traffic_unlimited")),
         traffic_used=(
@@ -160,9 +160,10 @@ async def my_subscription_command_handler(
             prepend_rows.append([
                 InlineKeyboardButton(
                     text=get_text("connect_button"),
-                    web_app=WebAppInfo(url=settings.SUBSCRIPTION_MINI_APP_URL),
+                    web_app=WebAppInfo(url=f"{settings.SUBSCRIPTION_MINI_APP_URL}/{local_sub.panel_subscription_uuid}"),
                 )
             ])
+            logging.info(f"connect_button. URL: {settings.SUBSCRIPTION_MINI_APP_URL}/{local_sub.panel_subscription_uuid}")
         else:
             cfg_link_val = (active or {}).get("config_link")
             if cfg_link_val:
