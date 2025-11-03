@@ -12,6 +12,7 @@ services:
       - ./locales:/app/locales
       - ./bot:/app/bot
       - ./config:/app/config
+      - ./db:/app/db
     restart: unless-stopped
     depends_on:
       remnawave-tg-shop-db:
