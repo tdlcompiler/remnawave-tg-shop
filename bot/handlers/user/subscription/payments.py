@@ -22,11 +22,13 @@ from db.dal import payment_dal, user_billing_dal
 
 router = Router(name="user_subscription_payments_router")
 
-
-def _parse_months_and_price(payload: str) -> Optional[Tuple[int, float]]:
+def _parse_months_and_price_and_sbp(payload: str) -> Optional[Tuple[int, float, bool]]:
     try:
-        months_str, price_str = payload.split(":")
-        return int(months_str), float(price_str)
+        parts = payload.split(":")
+        months = int(parts[0])
+        price = float(parts[1])
+        sbp = len(parts) > 2 and parts[2].strip().lower() == "sbp"
+        return months, price, sbp
     except (ValueError, IndexError):
         return None
 
@@ -69,6 +71,7 @@ async def _initiate_yk_payment(
     back_callback: str,
     payment_method_id: Optional[str] = None,
     selected_method_internal_id: Optional[int] = None,
+    sbp: bool = False
 ) -> bool:
     """Create payment record and initiate YooKassa payment (new card or saved card)."""
     if not callback.message:
@@ -128,49 +131,54 @@ async def _initiate_yk_payment(
         receipt_email=receipt_email_for_yk,
         save_payment_method=save_payment_method,
         payment_method_id=payment_method_id,
+        sbp=sbp
     )
 
     if payment_response_yk and payment_response_yk.get("confirmation_url"):
         pm = payment_response_yk.get("payment_method")
+
         try:
-            if pm and pm.get("id"):
-                pm_type = pm.get("type")
-                title = pm.get("title")
-                card = pm.get("card") or {}
-                account_number = pm.get("account_number") or pm.get("account")
-                if isinstance(card, dict) and (pm_type or "").lower() in {"bank_card", "bank-card", "card"}:
-                    display_network = card.get("card_type") or title or "Card"
-                    display_last4 = card.get("last4")
-                elif (pm_type or "").lower() in {"yoo_money", "yoomoney", "yoo-money", "wallet"}:
-                    display_network = "YooMoney"
-                    display_last4 = (
-                        account_number[-4:]
-                        if isinstance(account_number, str) and len(account_number) >= 4
-                        else None
-                    )
-                else:
-                    display_network = title or (pm_type.upper() if pm_type else "Payment method")
-                    display_last4 = None
-                await user_billing_dal.upsert_yk_payment_method(
-                    session,
-                    user_id=user_id,
-                    payment_method_id=pm["id"],
-                    card_last4=display_last4,
-                    card_network=display_network,
-                )
-                try:
-                    await user_billing_dal.upsert_user_payment_method(
+            pm_type = getattr(pm, "type", None) if not isinstance(pm, dict) else pm.get("type")
+            if pm_type == "sbp":
+                logging.info("Detected SBP method — skip save payment method.")
+            else:
+                if pm and pm.get("id"):
+                    title = pm.get("title")
+                    card = pm.get("card") or {}
+                    account_number = pm.get("account_number") or pm.get("account")
+                    if isinstance(card, dict) and (pm_type or "").lower() in {"bank_card", "bank-card", "card"}:
+                        display_network = card.get("card_type") or title or "Card"
+                        display_last4 = card.get("last4")
+                    elif (pm_type or "").lower() in {"yoo_money", "yoomoney", "yoo-money", "wallet"}:
+                        display_network = "YooMoney"
+                        display_last4 = (
+                            account_number[-4:]
+                            if isinstance(account_number, str) and len(account_number) >= 4
+                            else None
+                        )
+                    else:
+                        display_network = title or (pm_type.upper() if pm_type else "Payment method")
+                        display_last4 = None
+                    await user_billing_dal.upsert_yk_payment_method(
                         session,
                         user_id=user_id,
-                        provider_payment_method_id=pm["id"],
-                        provider="yookassa",
+                        payment_method_id=pm["id"],
                         card_last4=display_last4,
                         card_network=display_network,
-                        set_default=save_payment_method,
                     )
-                except Exception:
-                    pass
-                await session.commit()
+                    try:
+                        await user_billing_dal.upsert_user_payment_method(
+                            session,
+                            user_id=user_id,
+                            provider_payment_method_id=pm["id"],
+                            provider="yookassa",
+                            card_last4=display_last4,
+                            card_network=display_network,
+                            set_default=save_payment_method,
+                        )
+                    except Exception:
+                        pass
+                    await session.commit()
         except Exception:
             await session.rollback()
             logging.exception("Failed to save YooKassa payment method preliminarily")
@@ -395,7 +403,7 @@ async def pay_yk_callback_handler(callback: types.CallbackQuery, settings: Setti
             pass
         return
 
-    parsed = _parse_months_and_price(data_payload)
+    parsed = _parse_months_and_price_and_sbp(data_payload)
     if not parsed:
         logging.error(f"Invalid pay_yk payload structure: {callback.data}")
         try:
@@ -404,7 +412,7 @@ async def pay_yk_callback_handler(callback: types.CallbackQuery, settings: Setti
             pass
         return
 
-    months, price_rub = parsed
+    months, price_rub, sbp = parsed
     user_id = callback.from_user.id
     currency_code_for_yk = "RUB"
     autopay_enabled = bool(getattr(settings, 'YOOKASSA_AUTOPAYMENTS_ENABLED', False))
@@ -462,6 +470,7 @@ async def pay_yk_callback_handler(callback: types.CallbackQuery, settings: Setti
         user_id=user_id,
         months=months,
         price_rub=price_rub,
+        sbp=sbp,
         currency_code_for_yk=currency_code_for_yk,
         save_payment_method=autopay_enabled,
         back_callback=f"subscribe_period:{months}",
@@ -507,7 +516,7 @@ async def pay_yk_new_card_handler(callback: types.CallbackQuery, settings: Setti
             pass
         return
 
-    parsed = _parse_months_and_price(data_payload)
+    parsed = _parse_months_and_price_and_sbp(data_payload)
     if not parsed:
         logging.error(f"Invalid pay_yk_new payload structure: {callback.data}")
         try:
@@ -516,7 +525,7 @@ async def pay_yk_new_card_handler(callback: types.CallbackQuery, settings: Setti
             pass
         return
 
-    months, price_rub = parsed
+    months, price_rub, sbp = parsed
     user_id = callback.from_user.id
     currency_code_for_yk = "RUB"
     autopay_enabled = bool(getattr(settings, 'YOOKASSA_AUTOPAYMENTS_ENABLED', False))

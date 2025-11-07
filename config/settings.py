@@ -62,6 +62,7 @@ class Settings(BaseSettings):
     FREEKASSA_PAYMENT_METHOD_ID: Optional[int] = None
 
     YOOKASSA_ENABLED: bool = Field(default=True)
+    YOOKASSA_SBP_ENABLED: bool = Field(default=False)
     STARS_ENABLED: bool = Field(default=True)
     TRIBUTE_ENABLED: bool = Field(default=True)
 

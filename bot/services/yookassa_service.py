@@ -65,6 +65,7 @@ class YooKassaService:
             save_payment_method: bool = False,
             payment_method_id: Optional[str] = None,
             capture: bool = True,
+            sbp: bool = False,
             bind_only: bool = False) -> Optional[Dict[str, Any]]:
         if not self.configured:
             logging.error("YooKassa is not configured. Cannot create payment.")
@@ -123,6 +124,9 @@ class YooKassaService:
             if payment_method_id:
                 # Use a previously saved payment method for merchant-initiated payments
                 builder.set_payment_method_id(payment_method_id)
+                
+            if sbp:
+                builder.set_payment_method_data({"type": "sbp"})
 
             receipt_items_list: List[Dict[str, Any]] = [{
                 "description":
@@ -193,7 +197,7 @@ class YooKassaService:
                 response.description,
                 "test_mode":
                 response.test if hasattr(response, 'test') else None,
-                "payment_method": getattr(response, 'payment_method', None),
+                "payment_method": getattr(response, 'payment_method', None)
             }
         except Exception as e:
             logging.error(f"YooKassa payment creation failed: {e}",
