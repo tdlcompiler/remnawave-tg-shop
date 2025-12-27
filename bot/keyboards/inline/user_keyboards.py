@@ -167,9 +167,9 @@ def get_payment_method_keyboard(months: int, price: float,
                 text=_("pay_with_cryptopay_button"),
                 callback_data=f"pay_crypto:{value_str}:{price}{mode_suffix}",
             )
-        if settings.ADMIN_CONTACT_URL:
-            builder.button(text=_("pay_with_admin_contact"),
-                           url=settings.ADMIN_CONTACT_URL)
+    if settings.ADMIN_CONTACT_URL:
+        builder.button(text=_("pay_with_admin_contact"),
+                       url=settings.ADMIN_CONTACT_URL)
     builder.button(text=_(key="cancel_button"),
                    callback_data="main_action:subscribe")
     builder.adjust(1)
