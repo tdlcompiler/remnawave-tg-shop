@@ -149,7 +149,7 @@ async def _initiate_yk_payment(
             pm_type = getattr(pm, "type", None) if not isinstance(pm, dict) else pm.get("type")
             if pm_type == "sbp":
                 logging.info("Detected SBP method — skip save payment method.")
-            if pm and pm.get("id"):
+            elif pm and pm.get("id"):
                 pm_type = pm.get("type")
                 title = pm.get("title")
                 card = pm.get("card") or {}
@@ -366,7 +366,7 @@ async def pay_yk_callback_handler(callback: types.CallbackQuery, settings: Setti
             pass
         return
 
-    months, price_rub, salemode, sbp = parsed
+    months, price_rub, sale_mode, sbp = parsed
     user_id = callback.from_user.id
     currency_code_for_yk = "RUB"
     autopay_enabled = bool(settings.yookassa_autopayments_active and sale_mode != "traffic" and not settings.traffic_sale_mode)

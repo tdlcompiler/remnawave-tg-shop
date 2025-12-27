@@ -186,7 +186,7 @@ async def my_subscription_command_handler(
             pass
         text = get_text(
             "my_traffic_details",
-            status=active.get("status_from_panel", get_text("status_active")).capitalize(),
+            status=get_text("status_active") if active.get("status_from_panel", "").lower() == "active" else get_text("status_inactive"),
             end_date=end_date.strftime("%Y-%m-%d") if end_date else get_text("traffic_no_expiry"),
             traffic_limit=limit_display,
             traffic_used=used_display,
@@ -198,7 +198,7 @@ async def my_subscription_command_handler(
             "my_subscription_details",
             end_date=end_date.strftime("%Y-%m-%d") if end_date else "N/A",
             days_left=max(0, days_left),
-            status=active.get("status_from_panel", get_text("status_active")).capitalize(),
+            status=get_text("status_active") if active.get("status_from_panel", "").lower() == "active" else get_text("status_inactive"),
             config_link=config_link_value,
             traffic_limit=(f"{active['traffic_limit_bytes'] / 2**30:.2f} GB" if active.get("traffic_limit_bytes") else get_text("traffic_unlimited")),
             traffic_used=(
@@ -218,7 +218,7 @@ async def my_subscription_command_handler(
             prepend_rows.append([
                 InlineKeyboardButton(
                     text=get_text("connect_button"),
-                    web_app=WebAppInfo(url=settings.SUBSCRIPTION_MINI_APP_URL),
+                    url=settings.SUBSCRIPTION_MINI_APP_URL,
                 )
             ])
         else:
