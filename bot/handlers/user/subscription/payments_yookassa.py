@@ -28,7 +28,8 @@ def _parse_offer_payload(payload: str) -> Optional[Tuple[float, float, str]]:
         value = float(parts[0])
         price = float(parts[1])
         sale_mode = parts[2] if len(parts) > 2 else "subscription"
-        return value, price, sale_mode
+        sbp = len(parts) > 3 and parts[3].strip().lower() == "sbp"
+        return value, price, sale_mode, sbp
     except (ValueError, IndexError):
         return None
 
@@ -72,6 +73,7 @@ async def _initiate_yk_payment(
     payment_method_id: Optional[str] = None,
     selected_method_internal_id: Optional[int] = None,
     sale_mode: str = "subscription",
+    sbp: bool = False,
 ) -> bool:
     """Create payment record and initiate YooKassa payment (new card or saved card)."""
     if not callback.message:
@@ -138,11 +140,15 @@ async def _initiate_yk_payment(
         receipt_email=receipt_email_for_yk,
         save_payment_method=save_payment_method,
         payment_method_id=payment_method_id,
+        sbp=sbp,
     )
 
     if payment_response_yk and payment_response_yk.get("confirmation_url"):
         pm = payment_response_yk.get("payment_method")
         try:
+            pm_type = getattr(pm, "type", None) if not isinstance(pm, dict) else pm.get("type")
+            if pm_type == "sbp":
+                logging.info("Detected SBP method — skip save payment method.")
             if pm and pm.get("id"):
                 pm_type = pm.get("type")
                 title = pm.get("title")
@@ -360,7 +366,7 @@ async def pay_yk_callback_handler(callback: types.CallbackQuery, settings: Setti
             pass
         return
 
-    months, price_rub, sale_mode = parsed
+    months, price_rub, salemode, sbp = parsed
     user_id = callback.from_user.id
     currency_code_for_yk = "RUB"
     autopay_enabled = bool(settings.yookassa_autopayments_active and sale_mode != "traffic" and not settings.traffic_sale_mode)
@@ -421,6 +427,7 @@ async def pay_yk_callback_handler(callback: types.CallbackQuery, settings: Setti
         current_lang=current_lang,
         get_text=get_text,
         user_id=user_id,
+        sbp=sbp,
         months=months,
         price_rub=price_rub,
         currency_code_for_yk=currency_code_for_yk,
@@ -478,7 +485,7 @@ async def pay_yk_new_card_handler(callback: types.CallbackQuery, settings: Setti
             pass
         return
 
-    months, price_rub, sale_mode = parsed
+    months, price_rub, sale_mode, sbp = parsed
     user_id = callback.from_user.id
     currency_code_for_yk = "RUB"
     autopay_enabled = bool(settings.yookassa_autopayments_active and sale_mode != "traffic" and not settings.traffic_sale_mode)
