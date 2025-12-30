@@ -390,10 +390,7 @@ def get_connect_and_main_keyboard(
 
     if settings.SUBSCRIPTION_MINI_APP_URL and config_link:
         builder.row(
-            InlineKeyboardButton(
-                text=_("connect_button"),
-                web_app=WebAppInfo(url=config_link),
-            )
+            InlineKeyboardButton(text=_("connect_button"), url=settings.SUBSCRIPTION_MINI_APP_URL)
         )
     elif button_target:
         builder.row(
