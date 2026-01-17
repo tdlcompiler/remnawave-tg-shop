@@ -46,20 +46,29 @@ class Settings(BaseSettings):
         description="When true, new YooKassa payments in autopay mode force card binding without a user checkbox."
     )
 
-    NALOGO_INN: Optional[str] = Field(
+    LKNPD_INN: Optional[str] = Field(
         default=None,
-        description="INN for nalog.ru (self-employed) authentication"
+        alias="NALOGO_INN",
+        description="INN for lknpd.nalog.ru (self-employed) authentication"
     )
-    NALOGO_PASSWORD: Optional[str] = Field(
+    LKNPD_PASSWORD: Optional[str] = Field(
         default=None,
-        description="Password for nalog.ru (self-employed) authentication"
+        alias="NALOGO_PASSWORD",
+        description="Password for lknpd.nalog.ru (self-employed) authentication"
     )
-    NALOGO_RECEIPT_NAME_SUBSCRIPTION: str = Field(
+    LKNPD_API_URL: str = Field(
+        default="https://lknpd.nalog.ru/api",
+        alias="NALOGO_API_URL",
+        description="Base URL for LKNPD API (can be overridden for proxies)"
+    )
+    LKNPD_RECEIPT_NAME_SUBSCRIPTION: str = Field(
         default="subscription {months} months",
+        alias="NALOGO_RECEIPT_NAME_SUBSCRIPTION",
         description="Receipt item name for time-based subscriptions. Use {months} placeholder for duration."
     )
-    NALOGO_RECEIPT_NAME_TRAFFIC: str = Field(
+    LKNPD_RECEIPT_NAME_TRAFFIC: str = Field(
         default="traffic package {gb} GB",
+        alias="NALOGO_RECEIPT_NAME_TRAFFIC",
         description="Receipt item name for traffic packages. Use {gb} placeholder for traffic amount."
     )
 
@@ -587,14 +596,14 @@ def get_settings() -> Settings:
                     "CRITICAL: YooKassa credentials (SHOP_ID or SECRET_KEY) are not set. Payments will not work."
                 )
             if (
-                _settings_instance.NALOGO_INN
-                or _settings_instance.NALOGO_PASSWORD
+                _settings_instance.LKNPD_INN
+                or _settings_instance.LKNPD_PASSWORD
             ) and not (
-                _settings_instance.NALOGO_INN
-                and _settings_instance.NALOGO_PASSWORD
+                _settings_instance.LKNPD_INN
+                and _settings_instance.LKNPD_PASSWORD
             ):
                 logging.warning(
-                    "WARNING: Nalogo credentials are incomplete. Receipt sending will be disabled."
+                    "WARNING: LKNPD credentials are incomplete. Receipt sending will be disabled."
                 )
             if _settings_instance.FREEKASSA_ENABLED:
                 if (
