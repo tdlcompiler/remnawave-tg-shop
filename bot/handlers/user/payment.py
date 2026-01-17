@@ -18,7 +18,7 @@ from bot.services.subscription_service import SubscriptionService
 from bot.services.referral_service import ReferralService
 from bot.services.panel_api_service import PanelApiService
 from bot.services.yookassa_service import YooKassaService
-from bot.services.nalogo_service import NalogoService
+from bot.services.lknpd_service import LknpdService
 from bot.middlewares.i18n import JsonI18n
 from config.settings import Settings
 from bot.services.notification_service import NotificationService
@@ -39,7 +39,7 @@ async def process_successful_payment(session: AsyncSession, bot: Bot,
                                      panel_service: PanelApiService,
                                      subscription_service: SubscriptionService,
                                      referral_service: ReferralService,
-                                     nalogo_service: Optional[NalogoService] = None):
+                                     lknpd_service: Optional[LknpdService] = None):
     metadata = payment_info_from_webhook.get("metadata", {})
     user_id_str = metadata.get("user_id")
     subscription_months_str = metadata.get("subscription_months")
@@ -161,9 +161,9 @@ async def process_successful_payment(session: AsyncSession, bot: Bot,
                 session,
                 payment_db_id,
             )
-        should_send_nalogo_receipt = bool(
-            nalogo_service
-            and nalogo_service.configured
+        should_send_lknpd_receipt = bool(
+            lknpd_service
+            and lknpd_service.configured
             and payment_info_from_webhook.get("paid") is True
             and payment_info_from_webhook.get("status") == "succeeded"
             and payment_before_update
@@ -278,15 +278,15 @@ async def process_successful_payment(session: AsyncSession, bot: Bot,
         traffic_label = (
             str(int(traffic_amount_gb)) if float(traffic_amount_gb).is_integer() else f"{traffic_amount_gb:g}"
         )
-        if should_send_nalogo_receipt:
+        if should_send_lknpd_receipt:
             receipt_item_name = payment_info_from_webhook.get("description")
             if not receipt_item_name:
                 if sale_mode == "traffic":
-                    receipt_item_name = settings.NALOGO_RECEIPT_NAME_TRAFFIC.format(gb=traffic_label)
+                    receipt_item_name = settings.LKNPD_RECEIPT_NAME_TRAFFIC.format(gb=traffic_label)
                 else:
-                    receipt_item_name = settings.NALOGO_RECEIPT_NAME_SUBSCRIPTION.format(months=int(subscription_months))
+                    receipt_item_name = settings.LKNPD_RECEIPT_NAME_SUBSCRIPTION.format(months=int(subscription_months))
             try:
-                await nalogo_service.create_income_receipt(
+                await lknpd_service.create_income_receipt(
                     item_name=receipt_item_name,
                     amount=payment_value,
                     quantity=1.0,
@@ -294,7 +294,7 @@ async def process_successful_payment(session: AsyncSession, bot: Bot,
                 )
             except Exception:
                 logging.exception(
-                    "Failed to send Nalogo receipt for payment %s",
+                    "Failed to send LKNPD receipt for payment %s",
                     yk_payment_id_from_hook,
                 )
         config_link_display, connect_button_url = await prepare_config_links(
@@ -473,7 +473,7 @@ async def yookassa_webhook_route(request: web.Request):
         subscription_service: SubscriptionService = request.app[
             'subscription_service']
         referral_service: ReferralService = request.app['referral_service']
-        nalogo_service: Optional[NalogoService] = request.app.get('nalogo_service')
+        lknpd_service: Optional[LknpdService] = request.app.get('lknpd_service')
         async_session_factory: sessionmaker = request.app[
             'async_session_factory']
     except KeyError as e_app_ctx:
@@ -567,7 +567,7 @@ async def yookassa_webhook_route(request: web.Request):
                                 session, bot, payment_dict_for_processing,
                                 i18n_instance, settings, panel_service,
                                 subscription_service, referral_service,
-                                nalogo_service)
+                                lknpd_service)
                             await session.commit()
                         else:
                             logging.warning(

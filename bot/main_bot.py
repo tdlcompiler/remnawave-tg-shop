@@ -201,7 +201,7 @@ async def on_shutdown_configured(dispatcher: Dispatcher):
         "freekassa_service",
         "panel_webhook_service",
         "yookassa_service",
-        "nalogo_service",
+        "lknpd_service",
         "promo_code_service",
         "stars_service",
         "subscription_service",
