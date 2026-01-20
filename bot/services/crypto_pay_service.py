@@ -71,15 +71,24 @@ class CryptoPayService:
             logging.error("CryptoPayService not configured")
             return None
 
-        # Apply active discount if exists
+        # Check for active discount to save metadata (price already discounted from previous step)
+        original_amount = None
+        discount_amount = None
+        promo_code_id = None
+
         if promo_code_service:
-            # Import here to avoid circular import
-            from bot.handlers.user.subscription.payment_discount_helper import apply_discount_to_payment
-            final_amount, discount_amount, promo_code_id = await apply_discount_to_payment(
-                session, user_id, amount, promo_code_service
-            )
-        else:
-            final_amount, discount_amount, promo_code_id = amount, None, None
+            from db.dal import active_discount_dal
+            active_discount = await active_discount_dal.get_active_discount(session, user_id)
+            if active_discount:
+                # Price is already discounted, calculate original price backwards
+                discount_pct = active_discount.discount_percentage
+                original_amount = amount / (1 - discount_pct / 100)
+                discount_amount = original_amount - amount
+                promo_code_id = active_discount.promo_code_id
+                logging.info(
+                    f"Recording {discount_pct}% discount for CryptoPay payment: "
+                    f"original {original_amount:.2f} -> final {amount}"
+                )
 
         # Create pending payment in DB and commit to persist
         try:
@@ -87,8 +96,8 @@ class CryptoPayService:
                 session,
                 {
                     "user_id": user_id,
-                    "amount": final_amount,
-                    "original_amount": amount if discount_amount else None,
+                    "amount": amount,
+                    "original_amount": original_amount,
                     "discount_applied": discount_amount,
                     "currency": self.settings.CRYPTOPAY_ASSET,
                     "status": "pending_cryptopay",
@@ -115,7 +124,7 @@ class CryptoPayService:
         })
         try:
             invoice = await self.client.create_invoice(
-                amount=final_amount,
+                amount=amount,
                 currency_type=self.settings.CRYPTOPAY_CURRENCY_TYPE,
                 fiat=self.settings.CRYPTOPAY_ASSET if self.settings.CRYPTOPAY_CURRENCY_TYPE == "fiat" else None,
                 asset=self.settings.CRYPTOPAY_ASSET if self.settings.CRYPTOPAY_CURRENCY_TYPE == "crypto" else None,
