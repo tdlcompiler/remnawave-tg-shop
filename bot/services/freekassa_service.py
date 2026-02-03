@@ -78,10 +78,69 @@ class FreeKassaService:
         ip_address: Optional[str] = None,
         payment_method_id: Optional[int] = None,
         extra_params: Optional[Dict[str, Any]] = None,
+        promo_code_service=None,
+        session=None,
     ) -> Tuple[bool, Dict[str, Any]]:
         if not self.configured:
             logging.error("FreeKassaService is not configured. Cannot create order.")
             return False, {"message": "service_not_configured"}
+
+        # Check for active discount to save metadata (price already discounted from previous step)
+        original_amount = None
+        discount_amount = None
+        promo_code_id = None
+
+        if promo_code_service and session:
+            from db.dal import active_discount_dal
+            active_discount = await active_discount_dal.get_active_discount(session, user_id)
+            if active_discount:
+                # Price is already discounted, calculate original price backwards
+                discount_pct = active_discount.discount_percentage
+                promo_code_id = active_discount.promo_code_id
+                denominator = 1 - discount_pct / 100
+                if denominator <= 0:
+                    traffic_mode = bool(getattr(self.settings, "traffic_sale_mode", False))
+                    price_source = (
+                        getattr(self.settings, "traffic_packages", {}) or {}
+                        if traffic_mode
+                        else (self.settings.subscription_options or {})
+                    )
+                    fallback_original = price_source.get(months)
+                    if fallback_original is not None:
+                        original_amount = fallback_original
+                        discount_amount = original_amount - amount
+                        logging.info(
+                            f"Recording {discount_pct}% discount for FreeKassa payment: "
+                            f"original {original_amount:.2f} -> final {amount}"
+                        )
+                    else:
+                        logging.warning(
+                            "FreeKassa discount %s%% has invalid denominator and no fallback price for months=%s.",
+                            discount_pct,
+                            months,
+                        )
+                else:
+                    original_amount = amount / denominator
+                    discount_amount = original_amount - amount
+                    logging.info(
+                        f"Recording {discount_pct}% discount for FreeKassa payment: "
+                        f"original {original_amount:.2f} -> final {amount}"
+                    )
+
+                # Update payment record with discount metadata
+                try:
+                    await payment_dal.update_payment_discount_info(
+                        session,
+                        payment_db_id,
+                        original_amount,
+                        discount_amount,
+                        promo_code_id,
+                    )
+                    await session.commit()
+                except Exception as e_update:
+                    logging.warning(
+                        f"FreeKassa: failed to update discount metadata for payment {payment_db_id}: {e_update}"
+                    )
 
         ip_address = ip_address or self.server_ip
         if not ip_address:
@@ -293,6 +352,7 @@ class FreeKassaService:
                     int(months) if sale_mode != "traffic" else 0,
                     float(payment.amount),
                     payment.payment_id,
+                    promo_code_id_from_payment=payment.promo_code_id,
                     provider="freekassa",
                     sale_mode=sale_mode,
                     traffic_gb=months if sale_mode == "traffic" else None,

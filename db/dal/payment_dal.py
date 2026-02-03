@@ -60,17 +60,18 @@ async def ensure_payment_with_provider_id(
     """Idempotently create a payment record for a provider event.
 
     If a payment with the same provider_payment_id already exists, returns it.
-    Otherwise creates a new succeeded payment with provided data.
+    Otherwise creates a new pending payment with provided data.
     """
     existing = await get_payment_by_provider_payment_id(session, provider_payment_id)
     if existing:
         return existing
 
+    pending_status = f"pending_{provider}" if provider else "pending"
     payment_payload: Dict[str, Any] = {
         "user_id": user_id,
         "amount": float(amount),
         "currency": currency,
-        "status": "succeeded",
+        "status": pending_status,
         "description": description,
         "subscription_duration_months": months,
         "provider_payment_id": provider_payment_id,
@@ -171,6 +172,32 @@ async def update_provider_payment_and_status(
     else:
         logging.warning(
             f"Payment record with DB ID {payment_db_id} not found for provider update."
+        )
+    return payment
+
+
+async def update_payment_discount_info(
+        session: AsyncSession,
+        payment_db_id: int,
+        original_amount: Optional[float],
+        discount_applied: Optional[float],
+        promo_code_id: Optional[int]) -> Optional[Payment]:
+    """Update payment record with discount metadata."""
+    payment = await get_payment_by_db_id(session, payment_db_id)
+    if payment:
+        payment.original_amount = original_amount
+        payment.discount_applied = discount_applied
+        payment.promo_code_id = promo_code_id
+        payment.updated_at = func.now()
+        await session.flush()
+        await session.refresh(payment)
+        logging.info(
+            f"Payment record {payment.payment_id} updated with discount info: "
+            f"original {original_amount}, discount {discount_applied}, promo {promo_code_id}"
+        )
+    else:
+        logging.warning(
+            f"Payment record with DB ID {payment_db_id} not found for discount info update."
         )
     return payment
 
