@@ -60,7 +60,7 @@
   "my_devices_feature_disabled": "Раздел \"Мои устройства\" сейчас недоступен.",
 
   "cancel_button": "❌ Отмена",
-  "payment_description_subscription": "Оплата подписки на {months} мес.",
+  "payment_description_subscription": "Абонентская плата за пользование частной сетью TDL Cloud ({months} мес.)",
   "payment_description_traffic": "Пакет трафика {traffic_gb} ГБ",
   "payment_link_message": "Для оплаты подписки на {months} мес., нажмите кнопку ниже:",
   "payment_link_message_traffic": "Для оплаты пакета {traffic_gb} ГБ нажмите кнопку ниже:",

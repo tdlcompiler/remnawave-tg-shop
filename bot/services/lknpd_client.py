@@ -91,7 +91,7 @@ class LknpdClient:
     def __init__(
         self,
         base_url: str = "https://lknpd.nalog.ru/api",
-        timeout: float = 10.0,
+        timeout: float = 60.0,
     ):
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
