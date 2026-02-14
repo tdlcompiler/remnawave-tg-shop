@@ -2,7 +2,8 @@ import logging
 from aiogram import Router, F, types, Bot
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import datetime
+from datetime import datetime, timezone
+from db.dal import message_log_dal
 
 from config.settings import Settings
 from bot.services.subscription_service import SubscriptionService
@@ -223,6 +224,7 @@ async def confirm_activate_trial_handler(
         )
         return
 
+    await log_policy_acceptance(session, callback.from_user)
     activation_result = await subscription_service.activate_trial_subscription(
         session, user_id
     )
@@ -329,6 +331,22 @@ async def confirm_activate_trial_handler(
             await session.rollback()
             logging.error(f"Failed to mark trial for ad attribution for user {user_id}: {e_mark}")
 
+
+async def log_policy_acceptance(session, user):
+    await message_log_dal.create_message_log_no_commit(
+    session,
+    {
+        "user_id": user.id,
+        "telegram_username": user.username,
+        "telegram_first_name": user.first_name,
+        "event_type": f"user:accepted_policy_{version}",
+        "content": f"User accepted privacy policy.",
+        "raw_update_preview": None,
+        "is_admin_event": False,
+        "target_user_id": None,
+        "timestamp": datetime.now(timezone.utc),
+    },
+)
 
 @router.callback_query(F.data == "main_action:cancel_trial")
 async def cancel_trial_activation(

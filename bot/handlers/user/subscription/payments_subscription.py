@@ -8,9 +8,27 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from bot.keyboards.inline.user_keyboards import get_payment_method_keyboard
 from bot.middlewares.i18n import JsonI18n
 from config.settings import Settings
+from db.dal import message_log_dal
+from datetime import datetime, timezone
 
 router = Router(name="user_subscription_payments_selection_router")
 
+
+async def log_policy_acceptance(session, user):
+    await message_log_dal.create_message_log_no_commit(
+    session,
+    {
+        "user_id": user.id,
+        "telegram_username": user.username,
+        "telegram_first_name": user.first_name,
+        "event_type": f"user:accepted_policy_{version}",
+        "content": f"User accepted privacy policy.",
+        "raw_update_preview": None,
+        "is_admin_event": False,
+        "target_user_id": None,
+        "timestamp": datetime.now(timezone.utc),
+    },
+)
 
 @router.callback_query(F.data.startswith("subscribe_period:"))
 async def select_subscription_period_callback_handler(
@@ -141,6 +159,7 @@ async def select_subscription_period_callback_handler(
         sale_mode="traffic" if traffic_mode else "subscription",
     )
 
+    await log_policy_acceptance(session, callback.from_user)
     try:
         await callback.message.edit_text(text_content, reply_markup=reply_markup)
     except Exception as e_edit:
