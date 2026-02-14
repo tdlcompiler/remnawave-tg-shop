@@ -1,5 +1,5 @@
 {
-  "welcome": "Welcome to TDL Cloud! By continuing to use this service, you agree to <a href=\"https://tdlsub.oldtanksonline.ru/rules \">The rules of the service</a>.",
+  "welcome": "Welcome to TDL Cloud! By continuing to use this service, you accept <a href=\"https://tdlsub.oldtanksonline.ru/rules \">Rules and Privacy Policy</a> of the service.",
   "channel_subscription_required": "To use the bot, join the channel and tap \"Check subscription\".",
   "channel_subscription_join_button": "Open channel",
   "channel_subscription_verify_button": "Check subscription",
@@ -25,7 +25,7 @@
   "error_try_again": "Please try again.",
   "error_displaying_menu": "Error displaying menu.",
   "main_menu_unknown_action": "Unknown action.",
-  "select_subscription_period": "Select subscription period:",
+  "select_subscription_period": "The subscription includes access to the TDL Cloud service for a period of your choice in months without restrictions on speed and traffic consumption.\nContinuing, you accept <a href=\"https://tdlsub.oldtanksonline.ru/rules \">Rules and Privacy Policy</a> of the service.\n\nSelect the subscription period:",
   "select_traffic_package": "Select a traffic package:",
   "subscribe_for_months_button": "{months} mo. - {price} {currency_symbol}",
   "buy_traffic_package_button": "{traffic_gb} GB - {price} {currency_symbol}",

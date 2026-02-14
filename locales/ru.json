@@ -1,5 +1,5 @@
 {
-  "welcome": "Добро пожаловать в TDL Cloud! Продолжая пользоваться этим сервисом, Вы соглашаетесь с <a href=\"https://tdlsub.oldtanksonline.ru/rules\">Правилами сервиса</a>.",
+  "welcome": "Добро пожаловать в TDL Cloud! Продолжая пользоваться этим сервисом, Вы принимаете <a href=\"https://tdlsub.oldtanksonline.ru/rules\">Правила и Политику конфиденциальности</a> сервиса.",
   "channel_subscription_required": "Чтобы пользоваться ботом, подпишитесь на канал и нажмите \"Проверить подписку\".",
   "channel_subscription_join_button": "Перейти в канал",
   "channel_subscription_verify_button": "Проверить подписку",
@@ -25,7 +25,7 @@
   "error_try_again": "Попробуйте еще раз.",
   "error_displaying_menu": "Ошибка отображения меню.",
   "main_menu_unknown_action": "Неизвестное действие.",
-  "select_subscription_period": "Подписка включает доступ к сервису TDL Cloud на выбранный вами срок в месяцах без ограничений по скорости и потреблению трафика.\nПродолжая, Вы принимаете <a href=\"https://tdlsub.oldtanksonline.ru/rules\">условия использования сервиса</a>.\n\nВыберите срок подписки:",
+  "select_subscription_period": "Подписка включает доступ к сервису TDL Cloud на выбранный вами срок в месяцах без ограничений по скорости и потреблению трафика.\nПродолжая, Вы принимаете <a href=\"https://tdlsub.oldtanksonline.ru/rules\">Правила и Политику конфиденциальности</a> сервиса.\n\nВыберите срок подписки:",
   "select_traffic_package": "Выберите пакет трафика:",
   "subscribe_for_months_button": "{months} мес. - {price} {currency_symbol}",
   "buy_traffic_package_button": "{traffic_gb} ГБ - {price} {currency_symbol}",
