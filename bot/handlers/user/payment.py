@@ -290,7 +290,7 @@ async def process_successful_payment(session: AsyncSession, bot: Bot,
                     item_name=receipt_item_name,
                     amount=payment_value,
                     quantity=1.0,
-                    operation_time=datetime.now(timezone.utc),
+                    operation_time = datetime.now(ZoneInfo("Europe/Moscow")),
                 )
             except Exception:
                 logging.exception(
