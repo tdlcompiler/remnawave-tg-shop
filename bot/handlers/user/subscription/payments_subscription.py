@@ -21,7 +21,7 @@ async def log_policy_acceptance(session, user):
         "user_id": user.id,
         "telegram_username": user.username,
         "telegram_first_name": user.first_name,
-        "event_type": f"user:accepted_policy_{version}",
+        "event_type": f"user:accepted_policy",
         "content": f"User accepted privacy policy.",
         "raw_update_preview": None,
         "is_admin_event": False,
