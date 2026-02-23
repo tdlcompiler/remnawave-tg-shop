@@ -30,6 +30,35 @@ async def log_policy_acceptance(session, user):
     },
 )
 
+async def resolve_fiat_offer_price_for_user(
+    session: AsyncSession,
+    settings: Settings,
+    user_id: int,
+    months: float,
+    sale_mode: str,
+    promo_code_service=None,
+) -> Optional[float]:
+    """Resolve offer price server-side to prevent callback payload tampering."""
+    price_source = (
+        getattr(settings, "traffic_packages", {}) or {}
+        if sale_mode == "traffic"
+        else (settings.subscription_options or {})
+    )
+    base_price = price_source.get(months)
+    if base_price is None:
+        return None
+
+    resolved_price = float(base_price)
+    if promo_code_service:
+        active_discount_info = await promo_code_service.get_user_active_discount(session, user_id)
+        if active_discount_info:
+            discount_pct, _ = active_discount_info
+            resolved_price, _ = promo_code_service.calculate_discounted_price(
+                resolved_price,
+                discount_pct,
+            )
+    return resolved_price
+
 @router.callback_query(F.data.startswith("subscribe_period:"))
 async def select_subscription_period_callback_handler(
     callback: types.CallbackQuery,
@@ -45,8 +74,8 @@ async def select_subscription_period_callback_handler(
     if not i18n or not callback.message:
         try:
             await callback.answer(get_text("error_occurred_try_again"), show_alert=True)
-        except Exception:
-            pass
+        except Exception as exc:
+            logging.debug("Suppressed exception in bot/handlers/user/subscription/payments_subscription.py: %s", exc)
         return
 
     traffic_packages = getattr(settings, "traffic_packages", {}) or {}
@@ -58,8 +87,8 @@ async def select_subscription_period_callback_handler(
         logging.error(f"Invalid subscription period in callback_data: {callback.data}")
         try:
             await callback.answer(get_text("error_try_again"), show_alert=True)
-        except Exception:
-            pass
+        except Exception as exc:
+            logging.debug("Suppressed exception in bot/handlers/user/subscription/payments_subscription.py: %s", exc)
         return
 
     price_source = traffic_packages if traffic_mode else settings.subscription_options
@@ -67,7 +96,7 @@ async def select_subscription_period_callback_handler(
 
     price_rub = price_source.get(months)
     stars_price = stars_price_source.get(months)
-    currency_symbol_val = settings.DEFAULT_CURRENCY_SYMBOL
+    currency_symbol_val = "RUB"
 
     # Check for active discount and apply if exists
     discount_text = ""
@@ -129,8 +158,8 @@ async def select_subscription_period_callback_handler(
                 )
                 try:
                     await callback.answer(get_text("error_try_again"), show_alert=True)
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logging.debug("Suppressed exception in bot/handlers/user/subscription/payments_subscription.py: %s", exc)
                 return
             price_rub = 0.0
             currency_symbol_val = "⭐"
@@ -140,8 +169,8 @@ async def select_subscription_period_callback_handler(
             )
             try:
                 await callback.answer(get_text("error_try_again"), show_alert=True)
-            except Exception:
-                pass
+            except Exception as exc:
+                logging.debug("Suppressed exception in bot/handlers/user/subscription/payments_subscription.py: %s", exc)
             return
 
     text_content = get_text("choose_payment_method_traffic") if traffic_mode else get_text("choose_payment_method")
@@ -169,5 +198,5 @@ async def select_subscription_period_callback_handler(
         await callback.message.answer(text_content, reply_markup=reply_markup)
     try:
         await callback.answer()
-    except Exception:
-        pass
+    except Exception as exc:
+        logging.debug("Suppressed exception in bot/handlers/user/subscription/payments_subscription.py: %s", exc)
