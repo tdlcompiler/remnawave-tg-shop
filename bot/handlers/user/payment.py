@@ -1,6 +1,7 @@
 import logging
 import json
 from datetime import datetime, timezone, timedelta
+import zoneinfo
 from typing import Optional, Dict, Any
 
 from aiohttp import web
@@ -406,11 +407,12 @@ async def process_successful_payment(session: AsyncSession, bot: Bot,
                 else:
                     receipt_item_name = settings.LKNPD_RECEIPT_NAME_SUBSCRIPTION.format(months=int(subscription_months))
             try:
+                zone = zoneinfo.ZoneInfo("Europe/Moscow")
                 await lknpd_service.create_income_receipt(
                     item_name=receipt_item_name,
                     amount=payment_value,
                     quantity=1.0,
-                    operation_time = datetime.now(ZoneInfo("Europe/Moscow")),
+                    operation_time = datetime.now(zone),
                 )
             except Exception:
                 logging.exception(
