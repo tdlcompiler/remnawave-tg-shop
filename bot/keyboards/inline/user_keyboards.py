@@ -48,6 +48,10 @@ def get_main_menu_inline_keyboard(
             InlineKeyboardButton(text=_(key="menu_server_status_button"),
                                  url=settings.SERVER_STATUS_URL))
 
+    if settings.REQUIRED_CHANNEL_LINK:
+        builder.row(
+                InlineKeyboardButton(text=_(key="menu_channel_button"),
+                                     url=settings.REQUIRED_CHANNEL_LINK))
     if status_button_list:
         builder.row(language_button, *status_button_list)
     else:
