@@ -104,6 +104,8 @@ class YooKassaService:
                 "YooKassa receipt customer contact (email/phone) missing and no default email configured."
             }
 
+        tax_system_code = self.settings.YOOKASSA_TAX_SYSTEM_CODE
+
         try:
             builder = PaymentRequestBuilder()
             builder.set_amount({
@@ -133,6 +135,9 @@ class YooKassaService:
             if sbp:
                 builder.set_payment_method_data({"type": "sbp"})
 
+            payment_mode = self.settings.yk_receipt_payment_mode
+            payment_subject = self.settings.yk_receipt_payment_subject
+
             receipt_items_list: List[Dict[str, Any]] = [{
                 "description":
                 description[:128],
@@ -145,24 +150,27 @@ class YooKassaService:
                 "vat_code":
                 str(self.settings.YOOKASSA_VAT_CODE),
                 "payment_mode":
-                getattr(self.settings, 'yk_receipt_payment_mode', self.settings.YOOKASSA_PAYMENT_MODE),
+                payment_mode,
                 "payment_subject":
-                getattr(self.settings, 'yk_receipt_payment_subject', self.settings.YOOKASSA_PAYMENT_SUBJECT)
+                payment_subject
             }]
 
             receipt_data_dict: Dict[str, Any] = {
                 "customer": customer_contact_for_receipt,
-                "items": receipt_items_list
+                "items": receipt_items_list,
             }
+            if tax_system_code is not None:
+                receipt_data_dict["tax_system_code"] = tax_system_code
 
             builder.set_receipt(receipt_data_dict)
 
             idempotence_key = str(uuid.uuid4())
             payment_request = builder.build()
+            payment_request_payload = dict(payment_request)
 
             logging.info(
                 f"Creating YooKassa payment (Idempotence-Key: {idempotence_key}). "
-                f"Amount: {amount} {currency}. Metadata: {metadata}. Receipt: {receipt_data_dict}"
+                f"Amount: {amount} {currency}. Metadata: {metadata}. Payload: {payment_request_payload}"
             )
 
             loop = asyncio.get_running_loop()

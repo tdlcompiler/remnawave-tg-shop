@@ -11,7 +11,7 @@ on:
 jobs:
   codex:
     if: github.event.pull_request.draft == false
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     permissions:
       contents: read
     outputs:
@@ -53,7 +53,7 @@ jobs:
             ${{ github.event.pull_request.body }}
 
   post-feedback:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: codex
     if: needs.codex.outputs.final_message != ''
     permissions:

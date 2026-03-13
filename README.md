@@ -89,6 +89,9 @@
     | `YOOKASSA_ENABLED` | Включить/выключить YooKassa (`true`/`false`). |
     | `YOOKASSA_SHOP_ID` | ID вашего магазина в YooKassa. |
     | `YOOKASSA_SECRET_KEY`| Секретный ключ магазина YooKassa. |
+    | `YOOKASSA_TAX_SYSTEM_CODE` | (Опционально) Код СНО для чеков YooKassa (`1-6` по 54-ФЗ: ОСН, УСН доход, УСН доход-расход, ЕНВД, ЕСХН, ПСН). Передавайте только если ваша онлайн-касса требует `tax_system_code`; иначе параметр будет пропущен. |
+    | `YOOKASSA_PAYMENT_MODE` | (Опционально) Переопределяет `receipt.items[].payment_mode` для YooKassa. Если не задано, используется `full_prepayment` для обычных платежей и `full_payment` при `YOOKASSA_AUTOPAYMENTS_ENABLED=true`. |
+    | `YOOKASSA_PAYMENT_SUBJECT` | (Опционально) Переопределяет `receipt.items[].payment_subject` для YooKassa. Если не задано, используется `payment` для обычных платежей и `service` при `YOOKASSA_AUTOPAYMENTS_ENABLED=true`. |
     | `YOOKASSA_AUTOPAYMENTS_ENABLED` | Включить автопродление (сохранение карт, автосписания, управление способами оплаты). |
     | `YOOKASSA_AUTOPAYMENTS_REQUIRE_CARD_BINDING` | Требовать обязательную привязку карты при оплате с автосписанием. Установите `false`, чтобы пользователю показывался чекбокс «Сохранить карту». |
     | `NALOGO_INN` | ИНН для авторизации в nalog.ru (самозанятый). |
